@@ -1,3 +1,49 @@
+# gmr-deerflow
+
+Personal fork of [bytedance/deer-flow](https://github.com/bytedance/deer-flow) customized for
+research, architecture analysis, ML experiments, and GitHub automation.
+
+## gmr-deerflow Quick Start
+
+```bash
+# Clone and set up remotes
+git clone https://github.com/gman-robotics/gmr-deerflow.git ~/dev/gman-robotics/gmr-deerflow
+cd ~/dev/gman-robotics/gmr-deerflow
+git remote add upstream https://github.com/bytedance/deer-flow.git
+
+# Create host directories (outside repo, never committed)
+mkdir -p ~/deerflow-repos ~/deerflow-data
+
+# Create and populate .env (see .env.example for required keys)
+cp .env.example .env
+# Required: XAI_API_KEY, OPENROUTER_API_KEY, TAVILY_API_KEY, BRAVE_API_KEY
+# Required: GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, GITHUB_APP_PRIVATE_KEY_B64
+# Optional: JINA_API_KEY
+
+# Pull sandbox image, build, and start
+make docker-init && make docker-start
+# Open http://localhost:2026
+```
+
+## Customizations over upstream
+
+- **Models**: Grok 4 Fast Reasoning (default), Grok 4, OpenRouter Grok 4 fallback
+- **Web search**: `gmr_web_search` — Tavily primary + Brave Search fallback, transparent to agents.
+  Fallbacks logged with `[gmr_web_search]` prefix: `make docker-logs | grep gmr_web_search`
+- **Sandbox**: AIO Docker mode with `~/deerflow-repos` mounted at `/mnt/repos` for git worktrees
+- **Memory**: Persisted to `~/deerflow-data/memory.json` across restarts
+- **GitHub Auth**: GitHub App (short-lived installation tokens) via skill Step 0
+- **Skills**: `github-operations` — clone-once + worktree workflows, conventional commits, PRs
+
+## Upstream updates
+
+```bash
+git fetch upstream && git merge upstream/main && git push origin main
+make docker-stop && make docker-start
+```
+
+---
+
 # 🦌 DeerFlow - 2.0
 
 <a href="https://trendshift.io/repositories/14699" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14699" alt="bytedance%2Fdeer-flow | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>

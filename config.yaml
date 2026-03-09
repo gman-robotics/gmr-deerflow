@@ -1,0 +1,342 @@
+# Configuration for the DeerFlow application
+#
+# Guidelines:
+# - Copy this file to `config.yaml` and customize it for your environment
+# - The default path of this configuration file is `config.yaml` in the current working directory.
+#   However you can change it using the `DEER_FLOW_CONFIG_PATH` environment variable.
+# - Environment variables are available for all field values. Example: `api_key: $OPENAI_API_KEY`
+# - The `use` path is a string that looks like "package_name.sub_package_name.module_name:class_name/variable_name".
+
+# ============================================================================
+# Models Configuration
+# ============================================================================
+# Configure available LLM models for the agent to use
+
+models:
+  # Primary: Grok 4 Fast Reasoning — larger context, best for multi-step research tasks
+  - name: grok-4-fast
+    display_name: Grok 4 Fast Reasoning (xAI)
+    use: langchain_openai:ChatOpenAI
+    model: grok-4-1-fast-reasoning
+    base_url: https://api.x.ai/v1
+    api_key: $XAI_API_KEY
+    max_tokens: 131072
+    temperature: 0.7
+    supports_vision: true
+
+  # Full Grok 4 — for highest-quality reasoning tasks
+  - name: grok-4
+    display_name: Grok 4 (xAI Direct)
+    use: langchain_openai:ChatOpenAI
+    model: grok-4-latest
+    base_url: https://api.x.ai/v1
+    api_key: $XAI_API_KEY
+    max_tokens: 131072
+    temperature: 0.7
+    supports_vision: true
+
+  # OpenRouter fallback — activates if xAI quota is exhausted
+  - name: openrouter-grok-4
+    display_name: Grok 4 via OpenRouter
+    use: langchain_openai:ChatOpenAI
+    model: x-ai/grok-4-latest
+    base_url: https://openrouter.ai/api/v1
+    api_key: $OPENROUTER_API_KEY
+    max_tokens: 131072
+    temperature: 0.7
+
+# ============================================================================
+# Tool Groups Configuration
+# ============================================================================
+# Define groups of tools for organization and access control
+
+tool_groups:
+  - name: web
+  - name: file:read
+  - name: file:write
+  - name: bash
+
+# ============================================================================
+# Tools Configuration
+# ============================================================================
+# Configure available tools for the agent to use
+
+tools:
+  # Web search: Tavily primary, Brave Search fallback — transparent to the agent.
+  # Keys read from environment: TAVILY_API_KEY and BRAVE_API_KEY.
+  # Fallbacks are logged with [gmr_web_search] prefix for analysis.
+  - name: web_search
+    group: web
+    use: src.community.gmr_web_search.tools:web_search_tool
+    max_results: 5
+
+  # Web search tool (requires InfoQuest API key)
+  # - name: web_search
+  #   group: web
+  #   use: src.community.infoquest.tools:web_search_tool
+  #   # Used to limit the scope of search results, only returns content within the specified time range. Set to -1 to disable time filtering
+  #   search_time_range: 10
+
+  # Web fetch tool (uses Jina AI reader)
+  - name: web_fetch
+    group: web
+    use: src.community.jina_ai.tools:web_fetch_tool
+    timeout: 10
+
+  # Web fetch tool (uses InfoQuest AI reader)
+  # - name: web_fetch
+  #   group: web
+  #   use: src.community.infoquest.tools:web_fetch_tool
+  #   # Overall timeout for the entire crawling process (in seconds). Set to positive value to enable, -1 to disable
+  #   timeout: 10
+  #   # Waiting time after page loading (in seconds). Set to positive value to enable, -1 to disable
+  #   fetch_time: 10
+  #   # Timeout for navigating to the page (in seconds). Set to positive value to enable, -1 to disable
+  #   navigation_timeout: 30
+
+  # Image search tool (uses DuckDuckGo)
+  # Use this to find reference images before image generation
+  - name: image_search
+    group: web
+    use: src.community.image_search.tools:image_search_tool
+    max_results: 5
+
+  # File operations tools
+  - name: ls
+    group: file:read
+    use: src.sandbox.tools:ls_tool
+
+  - name: read_file
+    group: file:read
+    use: src.sandbox.tools:read_file_tool
+
+  - name: write_file
+    group: file:write
+    use: src.sandbox.tools:write_file_tool
+
+  - name: str_replace
+    group: file:write
+    use: src.sandbox.tools:str_replace_tool
+
+  # Bash execution tool
+  - name: bash
+    group: bash
+    use: src.sandbox.tools:bash_tool
+
+# ============================================================================
+# Sandbox Configuration
+# ============================================================================
+# Choose between local sandbox (direct execution) or Docker-based AIO sandbox
+
+# AIO Sandbox — auto-starts isolated Docker containers per task.
+# Requires Docker socket mounted in gateway/langgraph (see docker-compose-dev.yaml).
+# Repos volume mounted at /mnt/repos for git worktree workflows.
+sandbox:
+  use: src.community.aio_sandbox:AioSandboxProvider
+  auto_start: true
+  container_prefix: deer-flow-sandbox
+  mounts:
+    - host_path: ~/deerflow-repos
+      container_path: /mnt/repos
+      read_only: false
+  environment:
+    # GitHub App credentials for short-lived installation token generation.
+    # Tokens are generated at runtime in the skill — never stored.
+    GITHUB_APP_ID: $GITHUB_APP_ID
+    GITHUB_APP_INSTALLATION_ID: $GITHUB_APP_INSTALLATION_ID
+    GITHUB_APP_PRIVATE_KEY_B64: $GITHUB_APP_PRIVATE_KEY_B64
+
+# ============================================================================
+# Subagents Configuration
+# ============================================================================
+# Configure timeouts for subagent execution
+# Subagents are background workers delegated tasks by the lead agent
+
+# subagents:
+#   # Default timeout in seconds for all subagents (default: 900 = 15 minutes)
+#   timeout_seconds: 900
+#
+#   # Optional per-agent timeout overrides
+#   agents:
+#     general-purpose:
+#       timeout_seconds: 1800  # 30 minutes for complex multi-step tasks
+#     bash:
+#       timeout_seconds: 300   # 5 minutes for quick command execution
+
+# ============================================================================
+# Skills Configuration
+# ============================================================================
+# Configure skills directory for specialized agent workflows
+
+skills:
+  # Path to skills directory on the host (relative to project root or absolute)
+  # Default: ../skills (relative to backend directory)
+  # Uncomment to customize:
+  # path: /absolute/path/to/custom/skills
+
+  # Path where skills are mounted in the sandbox container
+  # This is used by the agent to access skills in both local and Docker sandbox
+  # Default: /mnt/skills
+  container_path: /mnt/skills
+
+# ============================================================================
+# Title Generation Configuration
+# ============================================================================
+# Automatic conversation title generation settings
+
+title:
+  enabled: true
+  max_words: 6
+  max_chars: 60
+  model_name: null # Use default model (first model in models list)
+
+# ============================================================================
+# Summarization Configuration
+# ============================================================================
+# Automatically summarize conversation history when token limits are approached
+# This helps maintain context in long conversations without exceeding model limits
+
+summarization:
+  enabled: true
+
+  # Model to use for summarization (null = use default model)
+  # Recommended: Use a lightweight, cost-effective model like "gpt-4o-mini" or similar
+  model_name: null
+
+  # Trigger conditions - at least one required
+  # Summarization runs when ANY threshold is met (OR logic)
+  # You can specify a single trigger or a list of triggers
+  trigger:
+    # Trigger when token count reaches 15564
+    - type: tokens
+      value: 15564
+    # Uncomment to also trigger when message count reaches 50
+    # - type: messages
+    #   value: 50
+    # Uncomment to trigger when 80% of model's max input tokens is reached
+    # - type: fraction
+    #   value: 0.8
+
+  # Context retention policy after summarization
+  # Specifies how much recent history to preserve
+  keep:
+    # Keep the most recent 10 messages (recommended)
+    type: messages
+    value: 10
+    # Alternative: Keep specific token count
+    # type: tokens
+    # value: 3000
+    # Alternative: Keep percentage of model's max input tokens
+    # type: fraction
+    # value: 0.3
+
+  # Maximum tokens to keep when preparing messages for summarization
+  # Set to null to skip trimming (not recommended for very long conversations)
+  trim_tokens_to_summarize: 15564
+
+  # Custom summary prompt template (null = use default LangChain prompt)
+  # The prompt should guide the model to extract important context
+  summary_prompt: null
+
+# ============================================================================
+# Memory Configuration
+# ============================================================================
+# Global memory mechanism
+# Stores user context and conversation history for personalized responses
+memory:
+  enabled: true
+  storage_path: data/memory.json # Persisted to ~/deerflow-data on host via Docker volume mount
+  debounce_seconds: 30 # Wait time before processing queued updates
+  model_name: null # Use default model
+  max_facts: 100 # Maximum number of facts to store
+  fact_confidence_threshold: 0.7 # Minimum confidence for storing facts
+  injection_enabled: true # Whether to inject memory into system prompt
+  max_injection_tokens: 2000 # Maximum tokens for memory injection
+
+
+# ============================================================================
+# Checkpointer Configuration
+# ============================================================================
+# Configure state persistence for the embedded DeerFlowClient.
+# The LangGraph Server manages its own state persistence separately
+# via the server infrastructure (this setting does not affect it).
+#
+# When configured, DeerFlowClient will automatically use this checkpointer,
+# enabling multi-turn conversations to persist across process restarts.
+#
+# Supported types:
+#   memory   - In-process only. State is lost when the process exits. (default)
+#   sqlite   - File-based SQLite persistence. Survives restarts.
+#              Requires: uv add langgraph-checkpoint-sqlite
+#   postgres - PostgreSQL persistence. Suitable for multi-process deployments.
+#              Requires: uv add langgraph-checkpoint-postgres psycopg[binary] psycopg-pool
+#
+# Examples:
+#
+# In-memory (default when omitted — no persistence):
+# checkpointer:
+#   type: memory
+#
+# SQLite (file-based, single-process):
+# checkpointer:
+#   type: sqlite
+#   connection_string: checkpoints.db
+#
+# PostgreSQL (multi-process, production):
+# checkpointer:
+#   type: postgres
+#   connection_string: postgresql://user:password@localhost:5432/deerflow
+
+# ============================================================================
+# IM Channels Configuration
+# ============================================================================
+# Connect DeerFlow to external messaging platforms.
+# All channels use outbound connections (WebSocket or polling) — no public IP required.
+
+# channels:
+#   # LangGraph Server URL for thread/message management (default: http://localhost:2024)
+#   langgraph_url: http://localhost:2024
+#   # Gateway API URL for auxiliary queries like /models, /memory (default: http://localhost:8001)
+#   gateway_url: http://localhost:8001
+#
+#   # Optional: default mobile/session settings for all IM channels
+#   session:
+#     assistant_id: lead_agent
+#     config:
+#       recursion_limit: 100
+#     context:
+#       thinking_enabled: true
+#       is_plan_mode: false
+#       subagent_enabled: false
+#
+#   feishu:
+#     enabled: false
+#     app_id: $FEISHU_APP_ID
+#     app_secret: $FEISHU_APP_SECRET
+#
+#   slack:
+#     enabled: false
+#     bot_token: $SLACK_BOT_TOKEN     # xoxb-...
+#     app_token: $SLACK_APP_TOKEN     # xapp-... (Socket Mode)
+#     allowed_users: []               # empty = allow all
+#
+#   telegram:
+#     enabled: false
+#     bot_token: $TELEGRAM_BOT_TOKEN
+#     allowed_users: []               # empty = allow all
+#
+#     # Optional: channel-level session overrides
+#     session:
+#       assistant_id: mobile_agent
+#       context:
+#         thinking_enabled: false
+#
+#       # Optional: per-user overrides by user_id
+#       users:
+#         "123456789":
+#           assistant_id: vip_agent
+#           config:
+#             recursion_limit: 150
+#           context:
+#             thinking_enabled: true
+#             subagent_enabled: true

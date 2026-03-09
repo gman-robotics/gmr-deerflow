@@ -23,6 +23,8 @@ venv/
 
 # Configuration files
 config.yaml
+# gmr-deerflow: track our customized config.yaml (uses $VAR references only, no secrets)
+!config.yaml
 mcp_config.json
 extensions_config.json
 

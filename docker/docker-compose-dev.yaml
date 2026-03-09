@@ -119,6 +119,10 @@ services:
       - ../backend/.deer-flow:/app/backend/.deer-flow
       # Mount uv cache for faster dependency installation
       - ~/.cache/uv:/root/.cache/uv
+      # Docker socket: required for AIO sandbox to start isolated containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Memory persistence: ~/deerflow-data on host -> /app/backend/data in container
+      - ~/deerflow-data:/app/backend/data
     working_dir: /app
     environment:
       - CI=true
@@ -148,6 +152,10 @@ services:
       - ../backend/.deer-flow:/app/backend/.deer-flow
       # Mount uv cache for faster dependency installation
       - ~/.cache/uv:/root/.cache/uv
+      # Docker socket: required for AIO sandbox to start isolated containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Memory persistence: ~/deerflow-data on host -> /app/backend/data in container
+      - ~/deerflow-data:/app/backend/data
     working_dir: /app
     environment:
       - CI=true
