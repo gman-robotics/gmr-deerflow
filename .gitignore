@@ -50,3 +50,6 @@ sandbox_image_cache.tar
 
 # ignore the legacy `web` folder
 web/
+
+# ignore memory bank memory_bank/
+memory_bank/
