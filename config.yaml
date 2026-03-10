@@ -23,6 +23,7 @@ models:
     max_tokens: 131072
     temperature: 0.7
     supports_vision: true
+    supports_thinking: true
 
   # Full Grok 4 — for highest-quality reasoning tasks
   - name: grok-4
@@ -34,6 +35,7 @@ models:
     max_tokens: 131072
     temperature: 0.7
     supports_vision: true
+    supports_thinking: true
 
   # OpenRouter fallback — activates if xAI quota is exhausted
   - name: openrouter-grok-4
@@ -44,6 +46,7 @@ models:
     api_key: $OPENROUTER_API_KEY
     max_tokens: 131072
     temperature: 0.7
+    supports_thinking: true
 
 # ============================================================================
 # Tool Groups Configuration
@@ -286,6 +289,10 @@ memory:
 # checkpointer:
 #   type: postgres
 #   connection_string: postgresql://user:password@localhost:5432/deerflow
+
+checkpointer:
+  type: sqlite
+  connection_string: data/checkpoints.db  # Persisted to ~/deerflow-data on host via Docker volume mount
 
 # ============================================================================
 # IM Channels Configuration
