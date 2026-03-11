@@ -1,6 +1,11 @@
+---
+name: github-operations
+description: Full lifecycle for GitHub operations — cloning, branching with worktrees, conventional commits, PR creation, and code review.
+---
+
 # GitHub Operations Skill
 
-**Description:** Full lifecycle for GitHub operations — cloning, branching with worktrees,
+**Description:** Full lifecycle for GitHub operations
 conventional commits, PR creation, and code review. Uses the shared `/mnt/repos` volume so
 repos are cloned once and reused across tasks via git worktrees, keeping the main clone clean.
 

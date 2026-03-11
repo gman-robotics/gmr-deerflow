@@ -136,6 +136,7 @@ tools:
 # Repos volume mounted at /mnt/repos for git worktree workflows.
 sandbox:
   use: src.community.aio_sandbox:AioSandboxProvider
+  image: ghcr.io/agent-infra/sandbox:latest
   auto_start: true
   container_prefix: deer-flow-sandbox
   mounts:
@@ -256,7 +257,6 @@ memory:
   injection_enabled: true # Whether to inject memory into system prompt
   max_injection_tokens: 2000 # Maximum tokens for memory injection
 
-
 # ============================================================================
 # Checkpointer Configuration
 # ============================================================================
@@ -292,7 +292,7 @@ memory:
 
 checkpointer:
   type: sqlite
-  connection_string: data/checkpoints.db  # Persisted to ~/deerflow-data on host via Docker volume mount
+  connection_string: data/checkpoints.db # Persisted to ~/deerflow-data on host via Docker volume mount
 
 # ============================================================================
 # IM Channels Configuration
